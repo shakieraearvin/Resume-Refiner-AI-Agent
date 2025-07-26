@@ -1,0 +1,195 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Resumer Refiner AI Agent",
+        "formDescription": "Please submit your resume, desired job description and email for the Al Agent to provide you with suggestion on how to update your resume for the specific job you are interested\nin applying for.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Resume",
+              "fieldType": "file",
+              "multipleFiles": false,
+              "acceptFileTypes": ".pdf",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Job Posting Link",
+              "placeholder": "Paste the Job Posting Here",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email ",
+              "fieldType": "email",
+              "placeholder": "Your Email Address",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -992,
+        -48
+      ],
+      "id": "c54c3ba8-17f8-40b6-bec6-cb87f2e7aeff",
+      "name": "On form submission",
+      "webhookId": "4995d7e6-ebd3-485d-bfb7-ac7ab331e39b"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('On form submission').item.json[\"Job Posting Link\"] }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -528,
+        -48
+      ],
+      "id": "36b21ff0-34c9-47ff-bf93-bdd003715659",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "=Resume",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -768,
+        -48
+      ],
+      "id": "5671187e-3e65-48c4-ab7b-0cfdb4c4bfed",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "GPT-3.5-TURBO"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You are a resume expert. Your job is to analyze a resume and a job description, and suggest how the resume can be improved to match the job.\n"
+            },
+            {
+              "content": "=Here is the resume:\n\n{{ $node[\"Extract from File\"].json[\"text\"] }}\n\nHere is the job posting:\n\n{{ $node[\"HTTP Request\"].json[\"data\"].slice(0, 5000) }}\n\n\nPlease suggest changes to improve the resume.\n",
+              "role": "=user"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -320,
+        -48
+      ],
+      "id": "7b70becc-9173-4a30-abea-e57209bb5036",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "IkQnbns879EwEyv5",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $node[\"On form submission\"].json[\"Email \"] }}",
+        "subject": "Your Resume Suggestions Are Ready!",
+        "message": "=<p>Hi there 👋,</p>  \n<p>Thanks for submitting your resume!</p> \n\n<p>Here are your personalized suggestions:</p>  \n<pre>{{ $json[\"choices\"][0][\"message\"][\"content\"] }}</pre>  \n\n\n<p>Keep going — you’re one step closer 💼</p> \n<p>— Resume Refiner AI Agent</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        32,
+        -48
+      ],
+      "id": "386f19f4-313a-4df5-8368-30dfea4fec35",
+      "name": "Send a message",
+      "webhookId": "4d20df27-1053-4d9b-b50c-407b8e056749",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "t8aTaFaxle128FYY",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "cf69df14-4413-46d8-a179-3f9d7d342a48",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d1713248f2678ed88dd80ab8af8d4b80d0b29e172a1e20fdb9e985871da08a21"
+  },
+  "id": "VaevRNgJBmuKJfsP",
+  "tags": []
+}
